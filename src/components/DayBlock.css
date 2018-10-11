@@ -67,3 +67,9 @@
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
 }
+
+@media (max-width: 600px) {
+    .dayBlock {
+      margin: 20px 20px;
+    }
+}

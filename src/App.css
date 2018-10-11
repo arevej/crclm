@@ -50,20 +50,20 @@ body {
   margin: 0 30px;
 }
 
-
-
 @media (max-width: 1200px) {
     .curriculum {
       flex-direction: column;
     }
-
 }
 
 @media (max-width: 600px) {
     .curriculum {
       margin: 30px 5px 0 5px;
     }
-    .DayBlock {
+    .curriculum-column {
+      margin: 0;
+    }
+    .dayBlock {
       margin: 20px 0;
     }
 }
