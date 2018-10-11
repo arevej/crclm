@@ -10,12 +10,12 @@ function TaskCheckBox({ isDone, onClick }) {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 3,
+        padding: 5,
       }}
       onClick={onClick}
     >
       <div
-        className="TaskCheckBox"
+        className="taskCheckBox"
         style={{
           background: isDone ? 'rgba(255, 0, 0, 1)' : 'transparent',
         }}
@@ -31,7 +31,7 @@ function NumericInput({ value, onChange, placeholder, onKeyDown, isDone }) {
       maxLength="2"
       value={value}
       onChange={onChange}
-      className="DayBlock-tasks-inputTime"
+      className="numericInput"
       placeholder={placeholder}
       style={{
         background: isDone ? 'rgba(255, 214, 214, 1)' : '#fff',
@@ -75,6 +75,7 @@ class Task extends Component {
         style={{
           background: task.isDone ? 'rgba(255, 214, 214, 1)' : '#fff',
         }}
+        className="task"
       >
         <TaskCheckBox
           onClick={task.text != '' ? () => this.markTaskAsDone(task.id) : null}
@@ -88,7 +89,7 @@ class Task extends Component {
             !task.isDone ? this.handleChange(task.id, evt, 'text') : null
           }
           value={task.text}
-          className="DayBlock-tasks-inputText"
+          className="inputText"
           placeholder="Task"
           style={{
             background: task.isDone ? 'rgba(255, 214, 214, 1)' : '#fff',

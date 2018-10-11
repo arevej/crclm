@@ -1,0 +1,43 @@
+.task {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+  padding: 0 4px;
+  transition: all 0.5s;
+}
+
+.task:hover {
+  border-bottom: 1px solid rgba(255, 0, 0, 0.3);
+}
+
+.inputText {
+  border: none;
+  width: 100%;
+  font-size: 16px;
+  resize: none;
+  padding: 13px 5px;
+  font-family: Helvetica;
+  letter-spacing: 0.2px;
+
+}
+
+.numericInput {
+  border: none;
+  width: 20px;
+  text-align: center;
+  font-size: 16px;
+  padding: 0 4px;
+}
+
+.numericInput:first-of-type {
+  border-left: 1px solid #ddd;
+}
+
+.taskCheckBox {
+  width: 13px;
+  height: 13px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 0, 0, 1);
+}
