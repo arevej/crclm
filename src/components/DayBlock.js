@@ -5,13 +5,16 @@ import { FaPlusCircle } from 'react-icons/fa';
 
 import Task from './Task';
 
-function BlockHeader({
-  title,
-  isOpen,
-  onClick,
-  totalDayHours,
-  totalDayMinutes,
-}) {
+function formatMinutesAsHoursAndMinutes(totalMinutes) {
+  const shownHoursAmount = Math.floor(totalMinutes / 60);
+  const shownMinutesAmount = totalMinutes % 60;
+
+  return `${shownHoursAmount}:${
+    shownMinutesAmount < 10 ? `0${shownMinutesAmount}` : shownMinutesAmount
+  }`;
+}
+
+function BlockHeader({ title, isOpen, onClick, totalDayMinutes }) {
   return (
     <div
       className="blockHeader"
@@ -23,8 +26,7 @@ function BlockHeader({
     >
       {title}
       <div className="blockHeader-totalDayTime">
-        {totalDayHours}:
-        {totalDayMinutes < 10 ? `0${totalDayMinutes}` : totalDayMinutes} h
+        {formatMinutesAsHoursAndMinutes(totalDayMinutes)} h
       </div>
     </div>
   );
@@ -47,16 +49,15 @@ class DayBlock extends Component {
 
   deleteTask = id => {
     const { tasks } = this.props;
-    if (this.props.tasks.length > 1) {
-      this.props.onDelete(id);
-      const currentTask = tasks.find(task => task.id === id);
-      const currentTaskIndex = tasks.indexOf(currentTask);
-      const previousTask = tasks[currentTaskIndex - 1];
-      if (previousTask) {
-        const element = this.inputs[previousTask.id];
-        if (element) {
-          setTimeout(() => element.focus(), 0);
-        }
+    if (tasks.length === 1) return;
+    this.props.onDelete(id);
+    const currentTask = tasks.find(task => task.id === id);
+    const currentTaskIndex = tasks.indexOf(currentTask);
+    const previousTask = tasks[currentTaskIndex - 1];
+    if (previousTask) {
+      const element = this.inputs[previousTask.id];
+      if (element) {
+        setTimeout(() => element.focus(), 0);
       }
     }
   };
@@ -76,28 +77,17 @@ class DayBlock extends Component {
   };
 
   render() {
-    const { isOpen, tasks } = this.props;
+    const { isOpen, tasks, day } = this.props;
 
-    const hoursAmount = tasks.reduce(
-      (acc, item) => acc + parseFloat(item.timeH === '' ? 0 : item.timeH),
-      0,
-    );
-    const minutesAmount = tasks.reduce(
-      (acc, item) => acc + parseFloat(item.timeMin === '' ? 0 : item.timeMin),
-      0,
-    );
-    const totalMinutesAmount = hoursAmount * 60 + minutesAmount;
-    const showedHoursAmount = Math.trunc(totalMinutesAmount / 60);
-    const showedMinutesAmount = totalMinutesAmount % 60;
+    const totalMinutes = tasks.reduce((acc, item) => acc + item.time, 0);
 
     return (
       <div className="dayBlock">
         <BlockHeader
-          title={this.props.day}
+          title={day}
           onClick={this.handleToggle}
           isOpen={isOpen}
-          totalDayHours={showedHoursAmount}
-          totalDayMinutes={showedMinutesAmount}
+          totalDayMinutes={totalMinutes}
         />
         {isOpen ? (
           <React.Fragment>
@@ -106,10 +96,16 @@ class DayBlock extends Component {
                 <Task
                   key={task.id}
                   task={task}
-                  onUpdateTask={(id, newTask) => this.updateTask(id, newTask)}
+                  onUpdateTask={newTask => this.updateTask(task.id, newTask)}
                   addNewTask={this.addNewTask}
-                  deleteTask={id => this.deleteTask(id)}
-                  inputs={this.inputs}
+                  deleteTask={() => this.deleteTask(task.id)}
+                  innerRef={element => {
+                    if (element) {
+                      this.inputs[task.id] = element;
+                    } else {
+                      delete this.inputs[task.id];
+                    }
+                  }}
                 />
               ))}
             </ul>

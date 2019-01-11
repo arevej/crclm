@@ -24,50 +24,79 @@ function TaskCheckBox({ isDone, onClick }) {
   );
 }
 
-function NumericInput({ value, onChange, placeholder, onKeyDown, isDone }) {
+// value = number
+// onChange = (number) => {}
+function NumericInput({ innerRef, value, onChange, ...rest }) {
   return (
     <input
+      ref={innerRef}
       type="text"
-      maxLength="2"
-      value={value}
-      onChange={onChange}
-      className="numericInput"
-      placeholder={placeholder}
-      style={{
-        background: isDone ? 'rgba(255, 214, 214, 1)' : '#fff',
+      value={value == 0 ? '' : value.toString()}
+      onChange={evt => {
+        const newValue = evt.target.value.replace(/\D/, '');
+        if (newValue === '') {
+          onChange(0);
+        } else {
+          onChange(parseInt(newValue));
+        }
       }}
-      onKeyDown={onKeyDown}
+      className="numericInput"
+      style={{
+        background: 'transparent',
+      }}
+      {...rest}
     />
   );
 }
 
-class Task extends Component {
-  handleChange = (id, evt, type) => {
-    const { task } = this.props;
-    if (!task) return;
-    if (type === 'text') {
-      const newTask = { ...task, text: evt.target.value };
+function TimeInput({ innerRef, minutes, onChangeMinutes, onEnterPress }) {
+  const wholeHours = Math.floor(minutes / 60);
+  const wholeMinutes = minutes % 60;
+  return (
+    <React.Fragment>
+      <NumericInput
+        innerRef={innerRef}
+        value={wholeHours}
+        onChange={newHours => onChangeMinutes(newHours * 60 + wholeMinutes)}
+        placeholder="h"
+        maxLength="2"
+        onKeyDown={() => {}}
+      />
+      :
+      <NumericInput
+        value={wholeMinutes}
+        onChange={newMinutes => onChangeMinutes(wholeHours * 60 + newMinutes)}
+        placeholder="m"
+        maxLength="2"
+        onKeyDown={evt => (evt.keyCode === 13 ? onEnterPress() : null)}
+      />
+    </React.Fragment>
+  );
+}
 
-      this.props.onUpdateTask(id, newTask);
-    } else if (type === 'hours') {
-      const newTask = { ...task, timeH: evt.target.value };
-      this.props.onUpdateTask(id, newTask);
-    } else if (type === 'minutes') {
-      const newTask = { ...task, timeMin: evt.target.value };
-      this.props.onUpdateTask(id, newTask);
-    }
+class Task extends Component {
+  _timeInputRef = null;
+
+  handleTextChange = evt => {
+    const { task } = this.props;
+    const newTask = { ...task, text: evt.target.value };
+    this.props.onUpdateTask(newTask);
   };
 
-  markTaskAsDone = id => {
+  handleTimeChange = num => {
     const { task } = this.props;
-    if (!task) return;
+    const newTask = { ...task, time: num };
+    this.props.onUpdateTask(newTask);
+  };
+
+  markTaskAsDone = () => {
+    const { task } = this.props;
     const newTask = { ...task, isDone: !task.isDone };
-    this.props.onUpdateTask(id, newTask);
+    this.props.onUpdateTask(newTask);
   };
 
   render() {
     const { task } = this.props;
-    const isValid = text => /^\d+$/.test(text) || text === '';
 
     return (
       <li
@@ -78,59 +107,41 @@ class Task extends Component {
         className="task"
       >
         <TaskCheckBox
-          onClick={task.text != '' ? () => this.markTaskAsDone(task.id) : null}
+          onClick={task.text != '' ? () => this.markTaskAsDone() : null}
           isDone={task.isDone}
         />
         <TextareaAutosize
           type="text"
           maxRows={5}
           rows={1}
-          onChange={evt =>
-            !task.isDone ? this.handleChange(task.id, evt, 'text') : null
-          }
+          onChange={evt => (!task.isDone ? this.handleTextChange(evt) : null)}
           value={task.text}
           className="inputText"
           placeholder="Task"
           style={{
-            background: task.isDone ? 'rgba(255, 214, 214, 1)' : '#fff',
+            background: 'transparent',
           }}
-          innerRef={element => {
-            if (element) {
-              this.props.inputs[task.id] = element;
-            } else {
-              delete this.props.inputs[task.id];
+          innerRef={this.props.innerRef}
+          onKeyDown={evt => {
+            if (evt.keyCode === 8 && task.text === '') {
+              this.props.deleteTask();
+            } else if (evt.keyCode === 13) {
+              if (evt.shiftKey) {
+                // noop
+              } else if (evt.metaKey) {
+                this.markTaskAsDone();
+              } else {
+                evt.preventDefault();
+                this._timeInputRef.focus();
+              }
             }
           }}
-          onKeyDown={evt =>
-            evt.keyCode === 8 && task.text === ''
-              ? this.props.deleteTask(task.id)
-              : null
-          }
         />
-        <NumericInput
-          value={task.timeH}
-          onChange={evt =>
-            isValid(evt.target.value)
-              ? this.handleChange(task.id, evt, 'hours')
-              : null
-          }
-          isDone={task.isDone}
-          placeholder="h"
-          onKeyDown={() => {}}
-        />
-        :
-        <NumericInput
-          value={task.timeMin}
-          onChange={evt =>
-            isValid(evt.target.value)
-              ? this.handleChange(task.id, evt, 'minutes')
-              : null
-          }
-          isDone={task.isDone}
-          placeholder="m"
-          onKeyDown={evt =>
-            evt.keyCode === 13 ? this.props.addNewTask() : null
-          }
+        <TimeInput
+          innerRef={ref => (this._timeInputRef = ref)}
+          minutes={task.time}
+          onChangeMinutes={this.handleTimeChange}
+          onEnterPress={this.props.addNewTask}
         />
       </li>
     );

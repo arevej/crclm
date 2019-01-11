@@ -15,69 +15,65 @@ function Header() {
   );
 }
 
-const defaultStartWeekDay = 1;
-const defaultWasUpdatedForNewWeek = false;
-
 function loadData() {
-  const _id = localStorage.getItem('lastId');
-  if (_id) {
-    id = parseInt(_id);
-  }
-  const data = localStorage.getItem('data');
-  if (data) {
-    return JSON.parse(data);
-  } else {
-    return defaultData;
-  }
+  id = loadItem('lastId', str => parseInt(str), id);
+  return {
+    data: loadItem('data', str => JSON.parse(str), defaultData),
+    startWeekDay: loadItem('startWeekDay', str => parseInt(str), 1),
+    wasUpdatedForNewWeek: loadItem(
+      'wasUpdatedForNewWeek',
+      str => str === 'true',
+      false,
+    ),
+  };
 }
 
-function loadStartWeekDay() {
-  const startWeekDay = localStorage.getItem('startWeekDay');
-  if (startWeekDay) {
-    return parseInt(startWeekDay);
-  } else {
-    return defaultStartWeekDay;
-  }
+function saveData(state) {
+  localStorage.setItem('data', JSON.stringify(state.data));
+  localStorage.setItem('lastId', id.toString());
+  localStorage.setItem('startWeekDay', state.startWeekDay.toString());
+  localStorage.setItem(
+    'wasUpdatedForNewWeek',
+    state.wasUpdatedForNewWeek.toString(),
+  );
 }
 
-function loadWasUpdatedForNewWeek() {
-  const wasUpdatedForNewWeek = localStorage.getItem('wasUpdatedForNewWeek');
-  if (wasUpdatedForNewWeek) {
-    return wasUpdatedForNewWeek === 'true';
+function loadItem(key, transformFn, defaultValue) {
+  const item = localStorage.getItem(key);
+  if (item) {
+    return transformFn(item);
   } else {
-    return defaultWasUpdatedForNewWeek;
+    return defaultValue;
   }
 }
 
 class App extends Component {
-  state = {
-    data: loadData(),
-    startWeekDay: loadStartWeekDay(),
-    wasUpdatedForNewWeek: loadWasUpdatedForNewWeek(),
-  };
+  state = loadData();
 
   componentDidMount() {
-    const today = new Date();
-    const day = today.getDay();
+    this.resetAllTasksEveryWeek();
+  }
+
+  componentDidUpdate() {
+    saveData(this.state);
+  }
+
+  resetAllTasksEveryWeek() {
+    const day = new Date().getDay();
     if (day === this.state.startWeekDay && !this.state.wasUpdatedForNewWeek) {
-      const newData = this.state.data.map(item => ({
-        ...item,
-        tasks: item.tasks.map(task => ({ ...task, isDone: false })),
-      }));
-      this.setState({ data: newData, wasUpdatedForNewWeek: true });
+      this.markAllTasksAsNotDone();
+      this.setState({ wasUpdatedForNewWeek: true });
     } else if (day != this.state.startWeekDay) {
       this.setState({ wasUpdatedForNewWeek: false });
     }
   }
 
-  componentDidUpdate() {
-    localStorage.setItem('data', JSON.stringify(this.state.data));
-    localStorage.setItem('lastId', id.toString());
-    localStorage.setItem('startWeekDay', this.state.startWeekDay.toString());
-    localStorage.setItem(
-      'wasUpdatedForNewWeek',
-      this.state.wasUpdatedForNewWeek.toString(),
-    );
+  markAllTasksAsNotDone() {
+    const newData = this.state.data.map(item => ({
+      ...item,
+      tasks: item.tasks.map(task => ({ ...task, isDone: false })),
+    }));
+    this.setState({ data: newData });
   }
 
   toggleDay = day => {
@@ -115,8 +111,7 @@ class App extends Component {
     const newTask = {
       id: id++,
       text: '',
-      timeH: '',
-      timeMin: '',
+      time: 0,
       isDone: false,
     };
     const newData = this.state.data.map(item => {
